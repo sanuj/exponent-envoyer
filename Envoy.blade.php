@@ -79,14 +79,22 @@ composer install --no-interaction --quiet --no-dev;
 @endtask
 
 @task('deployment:migrate', ['on' => $run_migrations_on])
-php {{ $release }}/artisan migrate --env={{ $env }} --force --no-interaction;
+cd {{ $release }}
+
+php artisan migrate --env={{ $env }} --force --no-interaction;
+
+cd {{ $path }}
 @endtask
 
 @task('deployment:cache')
-php {{ $release }}/artisan view:clear --quiet;
-php {{ $release }}/artisan cache:clear --quiet;
-php {{ $release }}/artisan config:cache --quiet;
+cd {{ $release }}
+
+php artisan view:clear --quiet;
+php artisan cache:clear --quiet;
+php artisan config:cache --quiet;
 echo 'Cache cleared';
+
+cd {{ $path }}
 @endtask
 
 @task('deployment:optimize')
