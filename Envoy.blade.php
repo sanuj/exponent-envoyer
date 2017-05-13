@@ -8,7 +8,7 @@ $branch = isset($branch) ? $branch : "master";
 $release = $path.'/releases/'.$date;
 
 foreach($servers as $key => $server) {
-    $servers[$key] = '-i "'.$server['IdentityFile']."\" {$server['User']}@{$server['Hostname']}";
+$servers[$key] = '-i "'.$server['IdentityFile']."\" {$server['User']}@{$server['Hostname']}";
 }
 @endsetup
 
@@ -16,27 +16,27 @@ foreach($servers as $key => $server) {
 
 @task('init')
 if [ ! -d {{ $path }}/current ]; then
-    if [ ! -d {{ $path }} ]; then
-        mkdir {{ $path }};
-    fi;
-    cd {{ $path }};
-    git clone {{ $repo }} --branch={{ $branch }} --depth=1 -q {{ $release }} ;
-    echo "Repository cloned";
-    mv {{ $release }}/storage {{ $path }}/storage;
-    ln -s {{ $path }}/storage {{ $release }}/storage;
-    ln -s {{ $path }}/storage/public {{ $release }}/public/storage;
-    echo "Storage directory set up";
-    cp {{ $release }}/.env.example {{ $path }}/.env;
-    ln -s {{ $path }}/.env {{ $release }}/.env;
-    echo "Environment file set up";
-    cd {{ $release }};
-    composer install --no-interaction --quiet --no-dev;
-    php artisan migrate --env={{ $env }} --force --no-interaction;
-    ln -s {{ $release }} {{ $path }}/current;
-    echo "Initial deployment ({{ $date }}) complete";
-    echo "***You've to configure nginx manually.";
+if [ ! -d {{ $path }} ]; then
+mkdir {{ $path }};
+fi;
+cd {{ $path }};
+git clone {{ $repo }} --branch={{ $branch }} --depth=1 -q {{ $release }} ;
+echo "Repository cloned";
+mv {{ $release }}/storage {{ $path }}/storage;
+ln -s {{ $path }}/storage {{ $release }}/storage;
+ln -s {{ $path }}/storage/public {{ $release }}/public/storage;
+echo "Storage directory set up";
+cp {{ $release }}/.env.example {{ $path }}/.env;
+ln -s {{ $path }}/.env {{ $release }}/.env;
+echo "Environment file set up";
+cd {{ $release }};
+composer install --no-interaction --quiet --no-dev;
+php artisan migrate --env={{ $env }} --force --no-interaction;
+ln -s {{ $release }} {{ $path }}/current;
+echo "Initial deployment ({{ $date }}) complete";
+echo "***You've to configure nginx manually.";
 else
-    echo "Deployment path already initialised (current symlink exists)!";
+echo "Deployment path already initialised (current symlink exists)!";
 fi
 @endtask
 
@@ -123,14 +123,29 @@ echo "Workers restarted.";
 
 @task('exponent:start')
 cd {{ $path }}/current;
-php artisan repricer:start;
+php artisan exponent:start;
 @endtask
 
 @task('exponent:stop')
 cd {{ $path }}/current;
-php artisan repricer:stop;
+php artisan exponent:stop;
+@endtask
+
+@task('exponent:import')
+@if(!isset($company) or !isset($marketplace) or !isset($filename))
+echo 'Syntax: envoy run exponent:import [company] [marketplace] [filename]';
+@else
+cd {{ $path }}/current;
+<?php $temp = '/tmp/'.time().'.csv' ?>
+cat >> {{ $tmp }} <<'EOF'
+{{ file_get_contents($filename) }}
+EOF
+
+php artisan exponent:import {{ $company }} {{ $marketplace }} {{ $temp }};
+rm {{ $temp }};
+@endif
 @endtask
 
 @after
-    @slack($slack, '#dev-bots')
+@slack($slack, '#dev-bots')
 @endafter
