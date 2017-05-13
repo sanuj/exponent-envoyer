@@ -137,7 +137,7 @@ echo 'Syntax: envoy run exponent:import [company] [marketplace] [filename]';
 @else
 cd {{ $path }}/current;
 <?php $temp = '/tmp/'.time().'.csv' ?>
-cat >> {{ $tmp }} <<'EOF'
+cat >> {{ $temp }} <<'EOF'
 {{ file_get_contents($filename) }}
 EOF
 
